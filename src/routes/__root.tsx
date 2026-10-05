@@ -17,7 +17,7 @@ export const Route = createRootRoute({
         content:
           "Upload one PNG or JPEG and send it as the email. Colors, type, and layout stay exact.",
       },
-      { name: "theme-color", content: "#0c0c0d" },
+      { name: "theme-color", content: "#071633" },
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },

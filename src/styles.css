@@ -6,18 +6,18 @@
   --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Instrument Serif", ui-serif, Georgia, serif;
 
-  --color-bg: #0c0c0d;
-  --color-surface: #141416;
-  --color-surface-2: #1c1c1f;
-  --color-fg: #ecece8;
-  --color-muted: #9a9a94;
-  --color-subtle: #6e6e68;
-  --color-border: #2a2a2e;
-  --color-accent: #c8ccd4;
-  --color-accent-fg: #0c0c0d;
-  --color-danger: #c45c4a;
-  --color-success: #6a9a72;
-  --color-warn: #b08948;
+  --color-bg: #071633;
+  --color-surface: #0b2048;
+  --color-surface-2: #102b5c;
+  --color-fg: #f2f7ff;
+  --color-muted: #a9c0e8;
+  --color-subtle: #7895c7;
+  --color-border: #23447d;
+  --color-accent: #2f5bff;
+  --color-accent-fg: #ffffff;
+  --color-danger: #6d9bff;
+  --color-success: #79a8ff;
+  --color-warn: #8eb5ff;
 
   --radius-sm: 8px;
   --radius-md: 12px;
