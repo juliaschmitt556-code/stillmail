@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { UserButton } from "@/lib/auth/gates";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
 import {
+  ensureTripTemplate,
   getActiveTemplate,
   getProviderStatus,
   listSendHistory,
@@ -77,11 +78,12 @@ export function Dashboard() {
 
   const load = useCallback(async () => {
     try {
-      const [tpl, status, rows] = await Promise.all([
+      const [loadedTemplate, status, rows] = await Promise.all([
         getActiveTemplate(),
         getProviderStatus(),
         listSendHistory(),
       ]);
+      const tpl = loadedTemplate ?? (await ensureTripTemplate());
       setTemplate(tpl);
       setProvider(status);
       setHistory(rows);
