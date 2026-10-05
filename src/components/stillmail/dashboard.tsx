@@ -25,7 +25,6 @@ import { readOriginalImage } from "@/lib/mail/read-image";
 import {
   formatBytes,
   isValidEmail,
-  MAX_IMAGE_BYTES,
   MAX_WIDTH_RECOMMENDED,
 } from "@/lib/mail/shared";
 import type { ActiveTemplate, MailProviderStatus, SendRecord } from "@/lib/mail/types";
@@ -41,10 +40,12 @@ import { cn } from "@/lib/utils";
 
 type Section = "upload" | "compose" | "history";
 
+const TRIP_TEMPLATE_URL = "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/E23D27A7-C665-400B-8E38-B0B44B47921B-Hz3mzcbr6CUhSCmBpSBVB81Co3J4vj.png";
+
 const SECTIONS: { id: Section; label: string; icon: typeof Upload }[] = [
   { id: "upload", label: "Template", icon: ImagePlus },
-  { id: "compose", label: "Composer", icon: Mail },
-  { id: "history", label: "History", icon: History },
+  { id: "compose", label: "Compose", icon: Mail },
+  { id: "history", label: "Send history", icon: History },
 ];
 
 function statusTone(status: SendRecord["status"]) {
@@ -71,6 +72,7 @@ export function Dashboard() {
   const [subject, setSubject] = useState("");
   const [previewText, setPreviewText] = useState("");
   const [fallbackText, setFallbackText] = useState("");
+  const [personalMessage, setPersonalMessage] = useState("");
   const [dragOver, setDragOver] = useState(false);
 
   const load = useCallback(async () => {
@@ -176,14 +178,15 @@ export function Dashboard() {
       toast.error("Add a subject line.");
       return;
     }
-    isTest ? setTesting(true) : setSending(true);
+    if (isTest) setTesting(true);
+    else setSending(true);
     try {
       const record = await sendTemplateEmail({
         data: {
           recipient: to,
           subject: isTest ? `[Test] ${subject.trim()}` : subject.trim(),
           previewText,
-          fallbackText,
+          fallbackText: [personalMessage.trim(), fallbackText.trim()].filter(Boolean).join("\n\n"),
           isTest,
         },
       });
@@ -202,7 +205,7 @@ export function Dashboard() {
     }
   };
 
-  const previewSrc = pendingPreview ?? template?.dataUrl ?? null;
+  const previewSrc = pendingPreview ?? template?.dataUrl ?? TRIP_TEMPLATE_URL;
 
   return (
     <div className="min-h-dvh bg-bg">
@@ -277,6 +280,8 @@ export function Dashboard() {
             setPreviewText={setPreviewText}
             fallbackText={fallbackText}
             setFallbackText={setFallbackText}
+            personalMessage={personalMessage}
+            setPersonalMessage={setPersonalMessage}
             sending={sending}
             testing={testing}
             onSend={() => void send(false)}
@@ -320,10 +325,15 @@ function UploadSection({
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <Card className="overflow-hidden p-0">
         <div className="border-b border-border px-5 py-4 sm:px-6">
-          <h1 className="font-display text-2xl tracking-[-0.02em]">Template upload</h1>
-          <p className="mt-1 text-sm text-muted">
-            PNG or JPEG, up to {formatBytes(MAX_IMAGE_BYTES)}. Stored original — never resized or recolored.
-          </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="font-display text-2xl tracking-[-0.02em]">Your email template</h1>
+              <p className="mt-1 text-sm text-muted">
+                Save the Trip design once. Every send uses the original proportions, colors, and typography.
+              </p>
+            </div>
+            <Badge tone={template?.active ? "success" : "neutral"}>{template?.active ? "Active" : "Draft"}</Badge>
+          </div>
         </div>
         <label
           onDragOver={(e) => {
@@ -428,6 +438,8 @@ function ComposeSection({
   setPreviewText,
   fallbackText,
   setFallbackText,
+  personalMessage,
+  setPersonalMessage,
   sending,
   testing,
   onSend,
@@ -446,6 +458,8 @@ function ComposeSection({
   setPreviewText: (v: string) => void;
   fallbackText: string;
   setFallbackText: (v: string) => void;
+  personalMessage: string;
+  setPersonalMessage: (v: string) => void;
   sending: boolean;
   testing: boolean;
   onSend: () => void;
@@ -499,13 +513,24 @@ function ComposeSection({
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="preview">Preview text</Label>
+            <Label htmlFor="preview">Preheader text</Label>
             <Input
               id="preview"
               value={previewText}
               onChange={(e) => setPreviewText(e.target.value)}
               placeholder="Inbox snippet, optional"
               maxLength={200}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="message">Personalized message <span className="text-subtle">(optional)</span></Label>
+            <Textarea
+              id="message"
+              value={personalMessage}
+              onChange={(e) => setPersonalMessage(e.target.value)}
+              placeholder="Add a short note for this recipient"
+              rows={3}
+              maxLength={1000}
             />
           </div>
           <div className="space-y-1.5">
