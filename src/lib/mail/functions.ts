@@ -23,6 +23,8 @@ const saveTemplateInput = z.object({
   imageBase64: z.string().min(16).max(Math.ceil(MAX_IMAGE_BYTES * 1.4)),
 });
 
+const TRIP_TEMPLATE_SOURCE_URL = "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/E23D27A7-C665-400B-8E38-B0B44B47921B-mDXwV8ZA3z2F8G3v8QVHBCgPucWOlb.png";
+
 const sendInput = z.object({
   recipient: z.string().trim().min(3).max(254),
   subject: z.string().trim().min(1).max(200),
@@ -124,6 +126,54 @@ export const getActiveTemplate = createServerFn({ method: "GET" })
     return {
       ...mapTemplate(row),
       dataUrl: `data:${row.mime_type};base64,${row.image_data}`,
+    };
+  });
+
+export const ensureTripTemplate = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }): Promise<ActiveTemplate | null> => {
+    const sql = await getSql();
+    const existing = await sql<TemplateRow>`
+      select id, name, mime_type, width, height, alt_text, file_size,
+             original_filename, active, created_at::text as created_at,
+             updated_at::text as updated_at, image_data
+      from email_templates
+      where user_id = ${context.userId} and active = true
+      limit 1
+    `;
+    if (existing[0]?.image_data) {
+      return { ...mapTemplate(existing[0]), dataUrl: `data:${existing[0].mime_type};base64,${existing[0].image_data}` };
+    }
+
+    const response = await fetch(TRIP_TEMPLATE_SOURCE_URL);
+    if (!response.ok) throw new Error("Could not load the Trip template artwork.");
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    const imageBase64 = Buffer.from(bytes).toString("base64");
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    await sql`
+      insert into email_templates (
+        id, user_id, name, mime_type, width, height, alt_text, file_size,
+        original_filename, image_data, active
+      ) values (
+        ${id}, ${context.userId}, ${"Trip Welcome Email"}, ${"image/png"},
+        ${1024}, ${1536}, ${"Trip welcome email design"}, ${bytes.byteLength},
+        ${"trip-email-template.png"}, ${imageBase64}, true
+      )
+    `;
+    return {
+      id,
+      name: "Trip Welcome Email",
+      mimeType: "image/png",
+      width: 1024,
+      height: 1536,
+      altText: "Trip welcome email design",
+      fileSize: bytes.byteLength,
+      originalFilename: "trip-email-template.png",
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+      dataUrl: `data:image/png;base64,${imageBase64}`,
     };
   });
 
